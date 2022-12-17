@@ -8,14 +8,20 @@
 
 
     <div class="card">
-        <form action="" method="get" class="card-header">
+        {{-- can be filtered by 1 or more field --}}
+        <form action="{{route('search')}}" method="post" class="card-header">
+            @csrf
             <div class="form-row justify-content-between">
                 <div class="col-md-2">
-                    <input type="text" name="title" placeholder="Product Title" class="form-control">
+                    <input type="text" name="title" id="title" placeholder="Product Title" class="form-control" value="">
                 </div>
                 <div class="col-md-2">
-                    <select name="variant" id="" class="form-control">
-
+                    <select name="variant" id="select" class="form-control">
+                        <option value="" selected>Select variant</option>
+                    @forelse($product_variants as $item)
+                        <option value="{{$item->id}}">{{$item->variant}}</option>
+                    @empty
+                    @endforelse
                     </select>
                 </div>
 
@@ -24,8 +30,8 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text">Price Range</span>
                         </div>
-                        <input type="text" name="price_from" aria-label="First name" placeholder="From" class="form-control">
-                        <input type="text" name="price_to" aria-label="Last name" placeholder="To" class="form-control">
+                        <input type="number" name="price_from" aria-label="First name" placeholder="From" class="form-control">
+                        <input type="number" name="price_to" aria-label="Last name" placeholder="To" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-2">
@@ -51,33 +57,44 @@
                     </thead>
 
                     <tbody>
-
+                    @forelse($products as $row)
                     <tr>
-                        <td>1</td>
-                        <td>T-Shirt <br> Created at : 25-Aug-2020</td>
-                        <td>Quality product in low cost</td>
+                        <td>{{$row->id}}</td>
+                        <td>{{$row->title}} <br> Created at : {{$row->created_at->format('d-M-Y')}}</td>
+                        <td>{{$row->description}}</td>
                         <td>
                             <dl class="row mb-0" style="height: 80px; overflow: hidden" id="variant">
 
                                 <dt class="col-sm-3 pb-0">
-                                    SM/ Red/ V-Nick
+                                @forelse($row->prices as $price)
+                                    {{$price->product_variant_one ? $price->product_variant_one->variant.'/' :null}}
+                                    {{$price->product_variant_two ? $price->product_variant_two->variant.'/' :null}}
+                                    {{$price->product_variant_three ? $price->product_variant_three->variant.'/' :null}}
+                                    <br>
+                                @empty
+                                @endforelse
                                 </dt>
                                 <dd class="col-sm-9">
+                                @forelse($row->prices as $price)
                                     <dl class="row mb-0">
-                                        <dt class="col-sm-4 pb-0">Price : {{ number_format(200,2) }}</dt>
-                                        <dd class="col-sm-8 pb-0">InStock : {{ number_format(50,2) }}</dd>
+                                        <dt class="col-sm-4 pb-0">Price : {{ number_format($price->price,2) }}</dt>
+                                        <dd class="col-sm-8 pb-0">InStock : {{ number_format($price->stock,2) }}</dd>
                                     </dl>
+                                @empty
+                                @endforelse
                                 </dd>
                             </dl>
                             <button onclick="$('#variant').toggleClass('h-auto')" class="btn btn-sm btn-link">Show more</button>
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ route('product.edit', 1) }}" class="btn btn-success">Edit</a>
+                                <a href="{{ route('product.edit', $row->id) }}" class="btn btn-success">Edit</a>
                             </div>
                         </td>
                     </tr>
-
+                    @empty
+                    <tr><td>No Data available</td></tr>
+                    @endforelse
                     </tbody>
 
                 </table>
@@ -86,15 +103,37 @@
         </div>
 
         <div class="card-footer">
+            <div class="d-flex justify-content-between">
+                <div>
+                    @php
+                        $showing = $products->perPage() * ($products->currentPage()-1) + 1;
+                        $to = $products->perPage() * $products->currentPage();
+                        $total = $products->total();
+                    @endphp
+                    <p>
+                        Showing {{$showing > $total ? $total : $showing}}
+                        to 
+                        {{$to > $total ? $total : $to}}
+                        out of 
+                        {{$total}}
+                    </p>
+                </div>
+                <div>
+                    {{ $products->links()}}
+                </div>
+            </div>
+        </div>
+
+        {{-- <div class="card-footer">
             <div class="row justify-content-between">
                 <div class="col-md-6">
                     <p>Showing 1 to 10 out of 100</p>
                 </div>
-                <div class="col-md-2">
-
+                <div class="col-md-6">
+                    {{ $products->appends($params)->links()}}
                 </div>
             </div>
-        </div>
+        </div> --}}
     </div>
 
 @endsection
